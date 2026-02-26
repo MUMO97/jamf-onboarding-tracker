@@ -1,24 +1,36 @@
-## macOS - Dummy File for Jamf Onboarding Completion
+# Jamf Onboarding Completion Tracker
 
-This repository contains a simple shell script that creates a **dummy file** on macOS to mark the **completion of a Jamf Pro onboarding workflow**. It is intended to be run as the **final step** in your onboarding policy and can be used in combination with an **extension attribute** to determine if onboarding has successfully completed.
+A lightweight shell script that creates a marker file on macOS to confirm a Jamf Pro onboarding workflow has completed. Designed to be deployed as the final step in an onboarding policy and paired with an Extension Attribute for smart group scoping.
 
-### ✅ Purpose
+---
 
-- Acts as a completion marker for onboarding.
-- Useful for Jamf smart group scoping or compliance checks.
-- Enables Jamf admins to reliably track onboarding status.
+## How it works
 
-### 📂 File Created
+The script writes a timestamped file to `/Users/Shared/` on the managed device. An Extension Attribute then checks for the presence of that file and returns `Complete` or `Incomplete` — giving you a reliable, queryable onboarding state in Jamf Pro.
 
-```plaintext
-/Users/Shared/jamfonboarding_dummy_file.txt
-```
+---
 
-This file includes a timestamp and a message confirming onboarding completion.
+## Deployment
 
-### 🧩 Sample Extension Attribute (Jamf Pro)
+### 1. Add the script to Jamf Pro
 
+- **Jamf Pro** → **Settings** → **Computer Management** → **Scripts**
+- Add `jamf_onboarding_complete.sh`
+- Set execution frequency: **Once per computer**
 
+### 2. Add it to your onboarding policy
+
+- Scope the policy to your onboarding smart group
+- Add the script as the **last payload** in the policy
+- Trigger: **Enrollment Complete** or custom event
+
+### 3. Create the Extension Attribute
+
+- **Jamf Pro** → **Settings** → **Computer Management** → **Extension Attributes**
+- Data type: **String**
+- Input type: **Script**
+
+```bash
 #!/bin/bash
 
 if [ -f "/Users/Shared/jamfonboarding_dummy_file.txt" ]; then
@@ -26,10 +38,38 @@ if [ -f "/Users/Shared/jamfonboarding_dummy_file.txt" ]; then
 else
     echo "<result>Incomplete</result>"
 fi
+```
 
+### 4. Build a Smart Group
 
-### 📋 Usage
+Create a smart group with the criteria:
 
-1. Add this script as the **last step** in your Jamf onboarding policy.
-2. Use the provided extension attribute in Jamf Pro to check file presence.
-3. Build smart groups or scoped policies based on the result.
+```
+Onboarding Status | is | Complete
+```
+
+Use this group to scope post-onboarding policies or to exclude devices still in progress.
+
+---
+
+## File location
+
+```
+/Users/Shared/jamfonboarding_dummy_file.txt
+```
+
+This path is writable by all users and persists across user sessions, making it reliable for shared and single-user workflows.
+
+---
+
+## Requirements
+
+- macOS 11.0 or later
+- Jamf Pro with script deployment capability
+- Policy run as: **root**
+
+---
+
+## Related
+
+- [Nexus — Jamf EA Dependency Analyzer](https://github.com/MUMO97/nexus) — visualize which smart groups and searches depend on Extension Attributes like this one
